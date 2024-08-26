@@ -1,5 +1,4 @@
 from flask_pymongo import PyMongo
-from urllib.parse import quote_plus
 from werkzeug.security import generate_password_hash, check_password_hash
 from config import Config
 

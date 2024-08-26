@@ -1,8 +1,7 @@
 from flask import Blueprint, request, jsonify
-from services.auth_service import authenticate_user, generate_access_token
+from services.auth_service import generate_access_token
 from services.email_service import send_verification_email
 from services.verification_service import generate_verification_code
-from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash
 from models import *
 from utils import HttpCodes

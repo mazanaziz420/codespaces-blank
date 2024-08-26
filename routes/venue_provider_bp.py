@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
-import os
 from bson import ObjectId
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from services.image_upload_service import ImageUploadingService
