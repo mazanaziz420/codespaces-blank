@@ -50,7 +50,6 @@ def create_venue_provider():
     except Exception as e:
         return jsonify({"message": "File upload failed", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
 
-    # Create a VenueProvider instance with URLs from ImageKit
     venue_provider = VenueProvider(
         property=data.get('property'),
         name_of_place=data.get('nameOfPlace'),
@@ -67,7 +66,6 @@ def create_venue_provider():
         picture_of_venue=picture_of_venue_url
     )
 
-    # Save the venue provider to the database
     result = venue_provider.save()
 
     if isinstance(result, Exception):

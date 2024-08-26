@@ -31,7 +31,6 @@ def signup():
     user.save()
     send_verification_email(data['email'], verification_code)
 
-    # Return user information except for the password
     user_info = {
         "email": user.email,
         "full_name": user.full_name,

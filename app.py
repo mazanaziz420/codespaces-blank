@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_jwt_extended import JWTManager
-from flask_cors import CORS  # Import CORS
+from flask_cors import CORS
 from config import Config
 from models import init_app
 from routes.users_bp import users_bp

@@ -1,5 +1,3 @@
-# services/image_uploading_service.py
-
 from imagekitio import ImageKit
 from config import Config
 

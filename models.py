@@ -30,7 +30,6 @@ class User:
             "is_verified": self.is_verified
         }
         try:
-            # Accessing the 'User' collection in 'eeve_db' database
             return mongo.db['User'].insert_one(user_data)
         except Exception as e:
             print(str(e))
