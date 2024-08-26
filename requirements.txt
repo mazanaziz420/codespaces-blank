@@ -1,0 +1,10 @@
+python-dotenv==0.21.1
+Flask
+mailjet_rest
+flask_jwt_extended
+Flask-Cors==4.0.0
+jsonschema
+PyJWT==2.6.0
+Flask-PyMongo
+pymongo[srv]
+imagekitio
