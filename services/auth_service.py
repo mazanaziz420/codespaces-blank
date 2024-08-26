@@ -1,5 +1,5 @@
 from flask_jwt_extended import create_access_token as jwt_create_access_token
-from models import User
+from routes.users_bp.models import User
 
 def generate_access_token(email):
     return jwt_create_access_token(identity=email)

@@ -3,8 +3,8 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from config import Config
 from models import init_app
-from routes.users_bp import users_bp
-from routes.venue_provider_bp import venue_provider_bp
+from routes.users_bp.routes import users_bp
+from routes.venue_provider_bp.routes import venue_provider_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
