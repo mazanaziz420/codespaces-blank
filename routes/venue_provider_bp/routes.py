@@ -27,7 +27,7 @@ def create_venue_provider():
     files = request.files
 
     cover_picture_url = None
-    picture_of_venue_url = None
+    venue_pictures_urls = []
 
     try:
         if 'coverPicture' in files:
@@ -38,31 +38,43 @@ def create_venue_provider():
                 file_name=secure_name
             )
 
-        if 'pictureOfVenue' in files:
-            picture_of_venue = files['pictureOfVenue']
-            secure_name = secure_filename(picture_of_venue.filename)
-            picture_of_venue_url = image_upload_service.upload_image(
-                file=picture_of_venue.read(),
-                file_name=secure_name
-            )
+        if 'venuePictures' in files:
+            for file in request.files.getlist('venuePictures'):
+                secure_name = secure_filename(file.filename)
+                url = image_upload_service.upload_image(
+                    file=file.read(),
+                    file_name=secure_name
+                )
+                venue_pictures_urls.append(url)
 
     except Exception as e:
         return jsonify({"message": "File upload failed", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
 
     venue_provider = VenueProvider(
-        property=data.get('property'),
-        name_of_place=data.get('nameOfPlace'),
+        first_name=data.get('firstName'),
+        last_name=data.get('lastName'),
+        email=data.get('email'),
+        phone=data.get('phone'),
+        id=data.get('id'),
+        name_of_venue=data.get('nameOfVenue'),
+        website=data.get('website'),
+        type_of_property=data.get('typeOfProperty'),
+        other_property_type=data.get('otherPropertyType'),
         city=data.get('city'),
-        state=data.get('state'),
-        postal_code=int(data.get('postalCode')),
         address=data.get('address'),
-        pin_location=int(data.get('pinLocation')),
-        additional_service=data.get('additionalService'),
-        price=float(data.get('price')),
-        amenities=data.get('amenities'),
+        state=data.get('state'),
+        capacity=int(data.get('capacity')),
+        size=int(data.get('size')),
+        pin_location=data.get('pinLocation'),
         place_description=data.get('placeDescription'),
+        additional_services=data.get('additionalServices'),
+        amenities=data.get('amenities'),
+        pricing=data.get('pricing'),
+        availability=data.get('availability'),
+        rules_and_regulations=data.get('rulesAndRegulations'),
+        special_features=data.get('specialFeatures'),
         cover_picture=cover_picture_url,
-        picture_of_venue=picture_of_venue_url
+        venue_pictures=venue_pictures_urls
     )
 
     result = venue_provider.save()
