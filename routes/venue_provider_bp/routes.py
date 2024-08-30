@@ -4,7 +4,7 @@ from bson import ObjectId
 from utils import HttpCodes
 import json
 from .models import *
-from .helpers import *
+from ..helpers import *
 
 venue_provider_bp = Blueprint('venue_provider_bp', __name__)
 
@@ -119,6 +119,44 @@ def get_venue_providers():
 
     except Exception as e:
         return jsonify({"message": "Error in Fetching Venues", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+
+@venue_provider_bp.route('/get/makeup/<venue_provider_id>', methods=['GET'])
+@jwt_required()
+def get_venue_provider(venue_provider_id):
+    try:
+        venue = VenueProvider.find_by_id(venue_provider_id)
+        if not venue:
+            return jsonify({"message": "Venue not found"}), HttpCodes.HTTP_404_NOT_FOUND
+        venue_id = venue['_id']
+        print(venue_id)
+        # Fetch related pricing
+        venue['pricing'] = {
+            pricing['type']: pricing['price']
+            for pricing in mongo.db['VenuePricing'].find({"venue_id": ObjectId(venue_id)})
+        }
+
+        # Fetch related amenities
+        venue['amenities'] = [
+            amenity['amenity']
+            for amenity in mongo.db['VenueAmenities'].find({"venue_id": ObjectId(venue_id)})
+        ]
+
+        # Fetch related additional services
+        venue['additionalServices'] = [
+            service['service']
+            for service in mongo.db['VenueAdditionalServices'].find({"venue_id": ObjectId(venue_id)})
+        ]
+
+        # Fetch related pictures
+        venue['venuePictures'] = [
+            picture['image_url']
+            for picture in mongo.db['VenuePictures'].find({"venue_id": ObjectId(venue_id)})
+        ]
+
+        return jsonify(venue), HttpCodes.HTTP_200_OK
+
+    except Exception as e:
+        return jsonify({"message": "Error in Fetching Venue", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
 
 @venue_provider_bp.route('/updatedata/<venue_id>', methods=['PUT'])
 @jwt_required()

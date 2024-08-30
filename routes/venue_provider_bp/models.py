@@ -47,6 +47,17 @@ class VenueProvider:
         except Exception as e:
             print(str(e))
             return e
+    
+    @staticmethod
+    def find_by_id(venue_id):
+        try:
+            venue = mongo.db['VenueProvider'].find_one({"_id": ObjectId(venue_id)})
+            if venue:
+                venue['_id'] = str(venue['_id'])
+            return venue
+        except Exception as e:
+            print(str(e))
+            return e
 
     @staticmethod
     def find_all():
