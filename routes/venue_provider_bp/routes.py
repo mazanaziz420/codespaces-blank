@@ -126,8 +126,6 @@ def update_venue_provider(venue_id):
     current_user = get_jwt_identity()
     data = request.form
     files = request.files
-    print("Form Data:", dict(data))
-    print("Files:", {k: v.filename for k, v in files.items()})
 
     cover_picture_url = None
     venue_pictures_urls = []
