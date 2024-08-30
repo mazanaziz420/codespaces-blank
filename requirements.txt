@@ -8,3 +8,6 @@ PyJWT==2.6.0
 Flask-PyMongo
 pymongo[srv]
 imagekitio
+pytest
+pytest-flask
+Flask-Testing
