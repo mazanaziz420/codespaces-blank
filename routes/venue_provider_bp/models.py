@@ -43,7 +43,8 @@ class VenueProvider:
             "place_description": self.place_description
         }
         try:
-            return mongo.db['VenueProvider'].insert_one(venue_data)
+            result = mongo.db['VenueProvider'].insert_one(venue_data)
+            return result.inserted_id
         except Exception as e:
             print(str(e))
             return e
@@ -68,6 +69,22 @@ class VenueProvider:
             print(str(e))
             return e
 
+    @staticmethod
+    def update(venue_id, update_data):
+        try:
+            return mongo.db['VenueProvider'].update_one({'_id': ObjectId(venue_id)}, {'$set': update_data})
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def delete(venue_id):
+        try:
+            return mongo.db['VenueProvider'].delete_one({'_id': ObjectId(venue_id)})
+        except Exception as e:
+            print(str(e))
+            return e
+
 class VenuePricing:
     def __init__(self, venue_id, type, price):
         self.venue_id = venue_id
@@ -76,12 +93,29 @@ class VenuePricing:
 
     def save(self):
         pricing_data = {
-            "venue_id": self.venue_id,
+            "venue_id": ObjectId(self.venue_id),
             "type": self.type,
             "price": self.price
         }
         try:
             return mongo.db['VenuePricing'].insert_one(pricing_data)
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def find_by_venue_id(venue_id):
+        try:
+            pricing = mongo.db['VenuePricing'].find({"venue_id": ObjectId(venue_id)})
+            return {item['type']: item['price'] for item in pricing}
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def delete_by_venue_id(venue_id):
+        try:
+            return mongo.db['VenuePricing'].delete_many({"venue_id": ObjectId(venue_id)})
         except Exception as e:
             print(str(e))
             return e
@@ -93,11 +127,28 @@ class VenuePictures:
 
     def save(self):
         picture_data = {
-            "venue_id": self.venue_id,
+            "venue_id": ObjectId(self.venue_id),
             "image_url": self.image_url
         }
         try:
             return mongo.db['VenuePictures'].insert_one(picture_data)
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def find_by_venue_id(venue_id):
+        try:
+            pictures = mongo.db['VenuePictures'].find({"venue_id": ObjectId(venue_id)})
+            return [picture['image_url'] for picture in pictures]
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def delete_by_venue_id(venue_id):
+        try:
+            return mongo.db['VenuePictures'].delete_many({"venue_id": ObjectId(venue_id)})
         except Exception as e:
             print(str(e))
             return e
@@ -109,11 +160,28 @@ class VenueAdditionalService:
 
     def save(self):
         service_data = {
-            "venue_id": self.venue_id,
+            "venue_id": ObjectId(self.venue_id),
             "service": self.service
         }
         try:
             return mongo.db['VenueAdditionalServices'].insert_one(service_data)
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def find_by_venue_id(venue_id):
+        try:
+            services = mongo.db['VenueAdditionalServices'].find({"venue_id": ObjectId(venue_id)})
+            return [service['service'] for service in services]
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def delete_by_venue_id(venue_id):
+        try:
+            return mongo.db['VenueAdditionalServices'].delete_many({"venue_id": ObjectId(venue_id)})
         except Exception as e:
             print(str(e))
             return e
@@ -125,11 +193,28 @@ class VenueAmenity:
 
     def save(self):
         amenity_data = {
-            "venue_id": self.venue_id,
+            "venue_id": ObjectId(self.venue_id),
             "amenity": self.amenity
         }
         try:
             return mongo.db['VenueAmenities'].insert_one(amenity_data)
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def find_by_venue_id(venue_id):
+        try:
+            amenities = mongo.db['VenueAmenities'].find({"venue_id": ObjectId(venue_id)})
+            return [amenity['amenity'] for amenity in amenities]
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def delete_by_venue_id(venue_id):
+        try:
+            return mongo.db['VenueAmenities'].delete_many({"venue_id": ObjectId(venue_id)})
         except Exception as e:
             print(str(e))
             return e

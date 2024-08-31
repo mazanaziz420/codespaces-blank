@@ -6,7 +6,7 @@ from utils import HttpCodes
 
 vendor_bp = Blueprint('vendor_bp', __name__)
 
-@vendor_bp.route('/vendor', methods=['POST'])
+@vendor_bp.route('/create', methods=['POST'])
 @jwt_required()
 def create_vendor():
     auth_check = check_user_type('VENDOR')
@@ -22,8 +22,8 @@ def create_vendor():
         if 'coverPicture' in files:
             cover_picture_url = upload_image(files['coverPicture'])
 
-        if 'venuePictures' in files:
-            venue_pictures_urls = [upload_image(file) for file in request.files.getlist('venuePictures')]
+        if 'vendor_pictures' in files:
+            venue_pictures_urls = [upload_image(file) for file in request.files.getlist('vendor_pictures')]
     except Exception as e:
         return jsonify({"message": "File upload failed", "error": str(e)}), HttpCodes.HTTP_400_BAD_REQUEST
 
@@ -53,7 +53,7 @@ def create_vendor():
     except Exception as e:
         return jsonify({"message": "Error processing data", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
 
-@vendor_bp.route('/vendor', methods=['GET'])
+@vendor_bp.route('/get_all', methods=['GET'])
 @jwt_required()
 def get_vendors():
     try:
@@ -66,7 +66,7 @@ def get_vendors():
     except Exception as e:
         return jsonify({"message": "Error in Fetching Vendors", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
 
-@vendor_bp.route('/vendor/<vendor_id>', methods=['GET'])
+@vendor_bp.route('/get/<vendor_id>', methods=['GET'])
 @jwt_required()
 def get_vendor(vendor_id):
     try:
@@ -78,7 +78,7 @@ def get_vendor(vendor_id):
     except Exception as e:
         return jsonify({"message": "Error in Fetching Vendor", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
 
-@vendor_bp.route('/vendor/<vendor_id>', methods=['PUT'])
+@vendor_bp.route('/update/<vendor_id>', methods=['PUT'])
 @jwt_required()
 def update_vendor(vendor_id):
     auth_check = check_user_type('VENDOR')
@@ -95,8 +95,8 @@ def update_vendor(vendor_id):
         if 'coverPicture' in files:
             cover_picture_url = upload_image(files['coverPicture'])
 
-        if 'venuePictures' in files:
-            venue_pictures_urls = [upload_image(file) for file in request.files.getlist('venuePictures')]
+        if 'vendor_pictures' in files:
+            venue_pictures_urls = [upload_image(file) for file in request.files.getlist('vendor_pictures')]
     except Exception as e:
         return jsonify({"message": "File upload failed", "error": str(e)}), HttpCodes.HTTP_400_BAD_REQUEST
 
@@ -128,7 +128,7 @@ def update_vendor(vendor_id):
     except Exception as e:
         return jsonify({"message": "Error processing data", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
 
-@vendor_bp.route('/vendor/<vendor_id>', methods=['DELETE'])
+@vendor_bp.route('/delete/<vendor_id>', methods=['DELETE'])
 @jwt_required()
 def delete_vendor(vendor_id):
     auth_check = check_user_type('VENDOR')

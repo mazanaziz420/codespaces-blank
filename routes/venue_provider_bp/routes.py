@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from bson import ObjectId
+from flask_jwt_extended import jwt_required
 from utils import HttpCodes
 import json
 from .models import *
@@ -50,12 +49,10 @@ def create_venue_provider():
             pin_location=data.get('pinLocation'),
             place_description=data.get('placeDescription')
         )
-        result = venue_provider.save()
+        venue_provider_id = venue_provider.save()
 
-        if isinstance(result, Exception):
-            return jsonify({"message": "Error in Creating Venue", "error": str(result)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
-
-        venue_provider_id = result.inserted_id
+        if isinstance(venue_provider_id, Exception):
+            return jsonify({"message": "Error in Creating Venue", "error": str(venue_provider_id)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
     
         # Save additional services
         additional_services = data.getlist('additionalServices')
@@ -85,35 +82,22 @@ def create_venue_provider():
 @venue_provider_bp.route('/get/makeups', methods=['GET'])
 @jwt_required()
 def get_venue_providers():
-    current_user = get_jwt_identity()
     try:
         venues = VenueProvider.find_all()
         for venue in venues:
             venue_id = venue['_id']
-            print(venue_id)
+
             # Fetch related pricing
-            venue['pricing'] = {
-                pricing['type']: pricing['price']
-                for pricing in mongo.db['VenuePricing'].find({"venue_id": ObjectId(venue_id)})
-            }
+            venue['pricing'] = VenuePricing.find_by_venue_id(venue_id)
 
             # Fetch related amenities
-            venue['amenities'] = [
-                amenity['amenity']
-                for amenity in mongo.db['VenueAmenities'].find({"venue_id": ObjectId(venue_id)})
-            ]
+            venue['amenities'] = VenueAmenity.find_by_venue_id(venue_id)
 
             # Fetch related additional services
-            venue['additionalServices'] = [
-                service['service']
-                for service in mongo.db['VenueAdditionalServices'].find({"venue_id": ObjectId(venue_id)})
-            ]
+            venue['additionalServices'] = VenueAdditionalService.find_by_venue_id(venue_id)
 
             # Fetch related pictures
-            venue['venuePictures'] = [
-                picture['image_url']
-                for picture in mongo.db['VenuePictures'].find({"venue_id": ObjectId(venue_id)})
-            ]
+            venue['venuePictures'] = VenuePictures.find_by_venue_id(venue_id)
 
         return jsonify(venues), HttpCodes.HTTP_200_OK
 
@@ -127,31 +111,20 @@ def get_venue_provider(venue_provider_id):
         venue = VenueProvider.find_by_id(venue_provider_id)
         if not venue:
             return jsonify({"message": "Venue not found"}), HttpCodes.HTTP_404_NOT_FOUND
+
         venue_id = venue['_id']
-        print(venue_id)
+
         # Fetch related pricing
-        venue['pricing'] = {
-            pricing['type']: pricing['price']
-            for pricing in mongo.db['VenuePricing'].find({"venue_id": ObjectId(venue_id)})
-        }
+        venue['pricing'] = VenuePricing.find_by_venue_id(venue_id)
 
         # Fetch related amenities
-        venue['amenities'] = [
-            amenity['amenity']
-            for amenity in mongo.db['VenueAmenities'].find({"venue_id": ObjectId(venue_id)})
-        ]
+        venue['amenities'] = VenueAmenity.find_by_venue_id(venue_id)
 
         # Fetch related additional services
-        venue['additionalServices'] = [
-            service['service']
-            for service in mongo.db['VenueAdditionalServices'].find({"venue_id": ObjectId(venue_id)})
-        ]
+        venue['additionalServices'] = VenueAdditionalService.find_by_venue_id(venue_id)
 
         # Fetch related pictures
-        venue['venuePictures'] = [
-            picture['image_url']
-            for picture in mongo.db['VenuePictures'].find({"venue_id": ObjectId(venue_id)})
-        ]
+        venue['venuePictures'] = VenuePictures.find_by_venue_id(venue_id)
 
         return jsonify(venue), HttpCodes.HTTP_200_OK
 
@@ -161,7 +134,6 @@ def get_venue_provider(venue_provider_id):
 @venue_provider_bp.route('/updatedata/<venue_id>', methods=['PUT'])
 @jwt_required()
 def update_venue_provider(venue_id):
-    current_user = get_jwt_identity()
     data = request.form
     files = request.files
 
@@ -195,29 +167,32 @@ def update_venue_provider(venue_id):
             "place_description": data.get('placeDescription'),
         }
 
-        result = mongo.db['VenueProvider'].update_one(
-            {'_id': ObjectId(venue_id)},
-            {'$set': update_data}
-        )
+        result = VenueProvider.update(venue_id, update_data)
 
+        if isinstance(result, Exception):
+            return jsonify({"message": "Error in Updating Venue", "error": str(result)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+
+        # Update additional services
         additional_services = data.getlist('additionalServices')
-        if additional_services:
-            mongo.db['VenueAdditionalServices'].delete_many({'venue_id': ObjectId(venue_id)})
-            for service in additional_services:
-                VenueAdditionalService(venue_id=venue_id, service=service).save()
+        VenueAdditionalService.delete_by_venue_id(venue_id)
+        for service in additional_services:
+            VenueAdditionalService(venue_id=venue_id, service=service).save()
 
+        # Update amenities
         amenities = data.getlist('amenities')
-        if amenities:
-            mongo.db['VenueAmenities'].delete_many({'venue_id': ObjectId(venue_id)})
-            for amenity in amenities:
-                VenueAmenity(venue_id=venue_id, amenity=amenity).save()
+        VenueAmenity.delete_by_venue_id(venue_id)
+        for amenity in amenities:
+            VenueAmenity(venue_id=venue_id, amenity=amenity).save()
 
+        # Update pricing
         pricing = json.loads(data.get('pricing'))
+        VenuePricing.delete_by_venue_id(venue_id)
         if pricing:
-            mongo.db['VenuePricing'].delete_many({'venue_id': ObjectId(venue_id)})
             for type, price in pricing.items():
                 VenuePricing(venue_id=venue_id, type=type, price=price).save()
 
+        # Update venue pictures
+        VenuePictures.delete_by_venue_id(venue_id)
         for url in venue_pictures_urls:
             VenuePictures(venue_id=venue_id, image_url=url).save()
 
@@ -229,21 +204,17 @@ def update_venue_provider(venue_id):
 @venue_provider_bp.route('/<venue_id>', methods=['DELETE'])
 @jwt_required()
 def delete_venue_provider(venue_id):
-    current_user = get_jwt_identity()
     try:
-        result = mongo.db['VenueProvider'].delete_one({'_id': ObjectId(venue_id)})
+        result = VenueProvider.delete(venue_id)
         if result.deleted_count == 0:
             return jsonify({"message": "Venue not found"}), HttpCodes.HTTP_404_NOT_FOUND
 
-        mongo.db['VenuePricing'].delete_many({'venue_id': ObjectId(venue_id)})
-
-        mongo.db['VenueAmenities'].delete_many({'venue_id': ObjectId(venue_id)})
-
-        mongo.db['VenueAdditionalServices'].delete_many({'venue_id': ObjectId(venue_id)})
-
-        mongo.db['VenuePictures'].delete_many({'venue_id': ObjectId(venue_id)})
+        # Delete related records
+        VenuePricing.delete_by_venue_id(venue_id)
+        VenueAmenity.delete_by_venue_id(venue_id)
+        VenueAdditionalService.delete_by_venue_id(venue_id)
+        VenuePictures.delete_by_venue_id(venue_id)
 
         return jsonify({"message": "Venue and associated data deleted successfully"}), HttpCodes.HTTP_200_OK
     except Exception as e:
         return jsonify({"message": "Error deleting venue", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
-    
