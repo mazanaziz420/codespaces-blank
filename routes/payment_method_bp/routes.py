@@ -15,11 +15,12 @@ def create_payment_intent():
         if not amount or not payment_method:
             return jsonify({"message": "Missing amount or payment_method"}), HttpCodes.HTTP_400_BAD_REQUEST
 
-        result = payment_service.create_payement_intent(amount, payment_method)
+        result = payment_service.create_payment_intent(amount, payment_method)
 
         return jsonify({
             'client_secret': result.client_secret,
-            'status': result.status
+            'status': result.status,
+            'result': result
         }), HttpCodes.HTTP_200_OK
 
     except Exception as e:

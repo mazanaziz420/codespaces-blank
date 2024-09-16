@@ -3,11 +3,12 @@ from config import Config
 
 class PaymentIntentService:
     def __init__(self):
-        self.stripe.api_key = Config.STRIPE_TEST_SECRET_KEY
-        
-    def create_payement_intent(self, amount, payment_method):
+        # Set the Stripe API key directly on the stripe module
+        stripe.api_key = Config.STRIPE_TEST_SECRET_KEY
+
+    def create_payment_intent(self, amount, payment_method):
         try:
-            result = self.stripe.PaymentIntent.create(
+            result = stripe.PaymentIntent.create(
                 amount=amount,
                 currency="usd",
                 payment_method=payment_method,
@@ -21,5 +22,3 @@ class PaymentIntentService:
         
         except Exception as e:
             raise Exception(f"Payment Failed: {str(e)}")
-    
-    
