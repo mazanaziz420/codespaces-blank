@@ -1,13 +1,13 @@
-from stripe import StripeClient
+import stripe
 from config import Config
 
 class PaymentIntentService:
     def __init__(self):
-        self.client = StripeClient(Config.STRIPE_TEST_SECRET_KEY)
+        self.stripe.api_key = Config.STRIPE_TEST_SECRET_KEY
         
     def create_payement_intent(self, amount, payment_method):
         try:
-            result = self.client.PaymentIntent.create(
+            result = self.stripe.PaymentIntent.create(
                 amount=amount,
                 currency="usd",
                 payment_method=payment_method,
