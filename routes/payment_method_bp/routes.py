@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from utils import HttpCodes
-from services.payement_service import PaymentIntentService
+from services.payment_service import PaymentIntentService
 
 payment_method_bp = Blueprint('payment_method_bp', __name__)
 payment_service = PaymentIntentService()
