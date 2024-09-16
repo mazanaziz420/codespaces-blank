@@ -11,3 +11,4 @@ imagekitio
 pytest
 pytest-flask
 Flask-Testing
+stripe
