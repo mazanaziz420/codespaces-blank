@@ -6,19 +6,21 @@ class PaymentIntentService:
         # Set the Stripe API key directly on the stripe module
         stripe.api_key = Config.STRIPE_TEST_SECRET_KEY
 
-    def create_payment_intent(self, amount, payment_method):
+    def create_payment_intent(self, amount):
         try:
+            # Convert amount to cents (Stripe uses smallest currency unit)
+            amount_in_cents = int(amount * 100)
+
             result = stripe.PaymentIntent.create(
-                amount=amount,
+                amount=amount_in_cents,
                 currency="usd",
-                payment_method=payment_method,
-                confirmation_method='manual',
-                confirm=True,
+                automatic_payment_methods={"enabled": True},  # Enable automatic payment methods (like cards)
             )
-            if result:
-                return result
-            else:
-                raise Exception("Payment Method Failed")
+            return result
         
+        except stripe.error.StripeError as e:
+            # Handle Stripe errors
+            raise Exception(f"Stripe Error: {str(e)}")
+
         except Exception as e:
             raise Exception(f"Payment Failed: {str(e)}")
