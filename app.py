@@ -6,7 +6,7 @@ from models import init_app
 from routes.users_bp.routes import users_bp
 from routes.venue_provider_bp.routes import venue_provider_bp
 from routes.vendor_bp.routes import vendor_bp
-from routes.payment_method_bp import payment_method_bp
+from routes.payment_method_bp.routes import payment_method_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
