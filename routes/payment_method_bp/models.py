@@ -70,7 +70,7 @@ class Payment:
 
 class PayedVenues:
     def __init__(self, payment_id, venue_id, created_at=None):
-        self.payment_id = ObjectId(payment_id)
+        self.payment_id = payment_id
         self.venue_id = ObjectId(venue_id)
         self.created_at = created_at or datetime.utcnow()
 
