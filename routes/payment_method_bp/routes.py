@@ -34,7 +34,7 @@ def create_payment_intent():
             return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
 
         result = payment_service.create_payment_intent(user['_id'], amount, payment_method)
-
+        print('result: ',  result)
         # Create a VenuePayment record after the payment intent is created
         venue_payment = PayedVenues(result.stripe_payment_id, selected_venue)
         venue_payment.save()

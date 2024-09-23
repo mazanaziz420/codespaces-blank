@@ -8,7 +8,6 @@ class PaymentIntentService:
 
     def create_payment_intent(self, user_id, amount, payment_method):
         try:
-            print('amount: ', float(amount))
             amount_in_cents = int(float(amount) * 100)
 
             # Create a PaymentIntent on Stripe with the provided payment method
