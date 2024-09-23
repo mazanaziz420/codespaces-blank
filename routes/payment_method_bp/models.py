@@ -67,3 +67,42 @@ class Payment:
         except Exception as e:
             print(str(e))
             return e
+
+class PayedVenues:
+    def __init__(self, payment_id, venue_id, created_at=None):
+        self.payment_id = ObjectId(payment_id)
+        self.venue_id = ObjectId(venue_id)
+        self.created_at = created_at or datetime.utcnow()
+
+    def save(self):
+        venue_payment_data = {
+            "payment_id": self.payment_id,
+            "venue_id": self.venue_id,
+            "created_at": self.created_at
+        }
+        try:
+            result = mongo.db['VenuePayments'].insert_one(venue_payment_data)
+            return result.inserted_id
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def find_by_venue_id(venue_id):
+        try:
+            venue_payments = mongo.db['VenuePayments'].find({"venue_id": ObjectId(venue_id)})
+            return [{**vp, '_id': str(vp['_id'])} for vp in venue_payments]
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def find_by_payment_id(payment_id):
+        try:
+            venue_payment = mongo.db['VenuePayments'].find_one({"payment_id": ObjectId(payment_id)})
+            if venue_payment:
+                venue_payment['_id'] = str(venue_payment['_id'])
+            return venue_payment
+        except Exception as e:
+            print(str(e))
+            return e

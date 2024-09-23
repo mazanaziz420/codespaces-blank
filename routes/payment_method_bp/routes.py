@@ -4,7 +4,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from utils import HttpCodes
 from services.payment_service import PaymentIntentService
 from routes.users_bp.models import User
-from .models import Payment
+from .models import Payment, PayedVenues
 
 payment_method_bp = Blueprint('payment_method_bp', __name__)
 payment_service = PaymentIntentService()
@@ -17,6 +17,7 @@ def create_payment_intent():
         amount = data.get('amount')
         email = data.get('email')
         payment_method = data.get('payment_method')
+        selected_venue = data.get('venue_id')
 
         if not amount or not email or not payment_method:
             return jsonify({"message": "Missing amount, email or payment method"}), HttpCodes.HTTP_400_BAD_REQUEST
@@ -34,6 +35,10 @@ def create_payment_intent():
 
         result = payment_service.create_payment_intent(user['_id'], amount, payment_method)
 
+        # Create a VenuePayment record after the payment intent is created
+        venue_payment = PayedVenues(result.stripe_payment_id, selected_venue)
+        venue_payment.save()
+        
         return jsonify({
             'client_secret': result.client_secret,
             'status': result.status,
