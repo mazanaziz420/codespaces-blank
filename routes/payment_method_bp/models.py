@@ -34,7 +34,13 @@ class Payment:
     def find_all():
         try:
             payments = mongo.db['Payments'].find()
-            return [{**payment, '_id': str(payment['_id'])} for payment in payments]
+            return [
+                {
+                    **payment, 
+                    '_id': str(payment['_id']),  # Convert ObjectId to string
+                    'user_id': str(payment['user_id']),  # Convert ObjectId to string
+                } for payment in payments
+            ]
         except Exception as e:
             print(str(e))
             return e
@@ -43,7 +49,13 @@ class Payment:
     def find_by_user_id(user_id):
         try:
             payments = mongo.db['Payments'].find({"user_id": ObjectId(user_id)})
-            return [{**payment, '_id': str(payment['_id'])} for payment in payments]
+            return [
+                {
+                    **payment, 
+                    '_id': str(payment['_id']),
+                    'user_id': str(payment['user_id']),  # Convert ObjectId to string
+                } for payment in payments
+            ]
         except Exception as e:
             print(str(e))
             return e
@@ -54,6 +66,7 @@ class Payment:
             payment = mongo.db['Payments'].find_one({"stripe_payment_id": stripe_payment_id})
             if payment:
                 payment['_id'] = str(payment['_id'])
+                payment['user_id'] = str(payment['user_id'])  # Convert ObjectId to string
             return payment
         except Exception as e:
             print(str(e))
@@ -63,7 +76,13 @@ class Payment:
     def find_by_status(payment_status):
         try:
             payments = mongo.db['Payments'].find({"payment_status": payment_status})
-            return [{**payment, '_id': str(payment['_id'])} for payment in payments]
+            return [
+                {
+                    **payment, 
+                    '_id': str(payment['_id']),
+                    'user_id': str(payment['user_id']),  # Convert ObjectId to string
+                } for payment in payments
+            ]
         except Exception as e:
             print(str(e))
             return e
@@ -91,7 +110,13 @@ class PayedVenues:
     def find_by_venue_id(venue_id):
         try:
             venue_payments = mongo.db['VenuePayments'].find({"venue_id": ObjectId(venue_id)})
-            return [{**vp, '_id': str(vp['_id'])} for vp in venue_payments]
+            return [
+                {
+                    **vp, 
+                    '_id': str(vp['_id']),
+                    'venue_id': str(vp['venue_id']),  # Convert ObjectId to string
+                } for vp in venue_payments
+            ]
         except Exception as e:
             print(str(e))
             return e
@@ -102,7 +127,9 @@ class PayedVenues:
             venue_payment = mongo.db['VenuePayments'].find_one({"payment_id": ObjectId(payment_id)})
             if venue_payment:
                 venue_payment['_id'] = str(venue_payment['_id'])
+                venue_payment['venue_id'] = str(venue_payment['venue_id'])  # Convert ObjectId to string
             return venue_payment
         except Exception as e:
-            print(str(e))
-            return e
+            print(str(e)) 
+            return e 
+        
