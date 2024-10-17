@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from utils import HttpCodes
 import json
 from .models import *
@@ -10,9 +10,16 @@ venue_provider_bp = Blueprint('venue_provider_bp', __name__)
 @venue_provider_bp.route('/postdata', methods=['POST'])
 @jwt_required()
 def create_venue_provider():
+    user_info = get_jwt_identity()
+    user_email = user_info.get('email')  # Extract the email from the JWT identity
+    # Get the user ID based on the email
+    user_id = get_user_id_by_email(user_email)
+    print(user_id)
+    if not user_id:
+        return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
     auth_check = check_user_type('VENUE_PROVIDER')
-    if auth_check:
-        return auth_check
+    # if auth_check:
+    #     return auth_check
     
     data = request.form
     files = request.files
@@ -47,7 +54,8 @@ def create_venue_provider():
             capacity=int(data.get('capacity')),
             size=int(data.get('size')),
             pin_location=data.get('pinLocation'),
-            place_description=data.get('placeDescription')
+            place_description=data.get('placeDescription'),
+            created_by=user_id
         )
         venue_provider_id = venue_provider.save()
 
@@ -218,3 +226,31 @@ def delete_venue_provider(venue_id):
         return jsonify({"message": "Venue and associated data deleted successfully"}), HttpCodes.HTTP_200_OK
     except Exception as e:
         return jsonify({"message": "Error deleting venue", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+
+@venue_provider_bp.route('/venues/by-user', methods=['GET'])
+@jwt_required()
+def get_venues_grouped_by_user():
+    try:
+        # Fetch all venues
+        venues = VenueProvider.find_all()
+        
+        # Group venues by 'created_by' field
+        grouped_venues = {}
+        for venue in venues:
+            created_by = venue.get('created_by')
+            if not created_by:
+                continue
+            
+            # Initialize a list for the user if not already present
+            if created_by not in grouped_venues:
+                grouped_venues[created_by] = []
+            
+            # Add the venue to the corresponding user's list
+            grouped_venues[created_by].append(venue)
+
+        # Return the grouped venues
+        return jsonify(grouped_venues), HttpCodes.HTTP_200_OK
+
+    except Exception as e:
+        return jsonify({"message": "Error in Fetching Venues", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+

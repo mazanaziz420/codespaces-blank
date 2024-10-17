@@ -2,8 +2,20 @@ from flask_pymongo import PyMongo
 from bson import ObjectId
 from models import mongo
 
+def get_user_id_by_email(email):
+    """Retrieve the user ID based on the provided email."""
+    try:
+        user = mongo.db['User'].find_one({"email": email})
+        if user:
+            return str(user['_id'])  # Convert ObjectId to string
+        else:
+            return None
+    except Exception as e:
+        print("Error fetching user ID:", e)
+        return None
+
 class VenueProvider:
-    def __init__(self, first_name, last_name, email, phone, id, name_of_venue, website, type_of_property, city, address, state, capacity, size, pin_location, place_description, cover_picture=None, other_property_type=None):
+    def __init__(self, first_name, last_name, email, phone, id, name_of_venue, website, type_of_property, city, address, state, capacity, size, pin_location, place_description, created_by, cover_picture=None, other_property_type=None):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
@@ -21,6 +33,7 @@ class VenueProvider:
         self.size = size
         self.pin_location = pin_location
         self.place_description = place_description
+        self.created_by = created_by
 
     def save(self):
         venue_data = {
@@ -40,7 +53,8 @@ class VenueProvider:
             "capacity": self.capacity,
             "size": self.size,
             "pin_location": self.pin_location,
-            "place_description": self.place_description
+            "place_description": self.place_description,
+            "created_by": self.created_by
         }
         try:
             result = mongo.db['VenueProvider'].insert_one(venue_data)
