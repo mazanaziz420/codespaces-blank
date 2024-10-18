@@ -126,3 +126,28 @@ def reset_password():
         return jsonify({"message": "Password updated successfully"}), HttpCodes.HTTP_200_OK
     
     return jsonify({"message": "Invalid verification code"}), HttpCodes.HTTP_400_BAD_REQUEST
+
+@users_bp.route('/all_users', methods=['GET'])
+def get_all_users():
+    """
+    Get all users along with their details, including unhashed passwords.
+    This is for personal reference only and should not be used in production.
+    """
+    try:
+        # Fetch all users from the database
+        users = mongo.db['User'].find()
+        user_list = [
+            {
+                "email": user['email'],
+                "password": user['password'],  # This is the hashed password stored in the database
+                "full_name": user['full_name'],
+                "username": user['username'],
+                "user_type": user['user_type'],
+                "is_verified": user['is_verified']
+            }
+            for user in users
+        ]
+
+        return jsonify({"users": user_list}), HttpCodes.HTTP_200_OK
+    except Exception as e:
+        return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR

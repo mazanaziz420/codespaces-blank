@@ -14,12 +14,12 @@ def create_venue_provider():
     user_email = user_info.get('email')  # Extract the email from the JWT identity
     # Get the user ID based on the email
     user_id = get_user_id_by_email(user_email)
-    print(user_id)
+    
     if not user_id:
         return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
     auth_check = check_user_type('VENUE_PROVIDER')
-    # if auth_check:
-    #     return auth_check
+    if auth_check:
+        return auth_check
     
     data = request.form
     files = request.files
