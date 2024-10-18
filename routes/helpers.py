@@ -20,3 +20,6 @@ def check_user_type(required_type):
         return jsonify({"message": "User not authorized"}), HttpCodes.HTTP_403_NOT_VERIFIED
     
     return None
+
+def is_customer(user):
+    return user.get("user_type") == "customer"

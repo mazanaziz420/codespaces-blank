@@ -1,108 +1,81 @@
 # routes/payment_method_bp/routes.py
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from .models import PaymentMethod
 from utils import HttpCodes
-from services.payment_service import PaymentIntentService
-from routes.users_bp.models import User
-from .models import Payment, PayedVenues
+from bson import ObjectId
+from models import mongo
+from helpers import is_customer
+
 
 payment_method_bp = Blueprint('payment_method_bp', __name__)
-payment_service = PaymentIntentService()
 
-@payment_method_bp.route('/create-payment-intent', methods=['POST'])
+@payment_method_bp.route('/add', methods=['POST'])
 @jwt_required()
-def create_payment_intent():
-    try:
-        data = request.json
-        amount = data.get('amount')
-        email = data.get('email')
-        payment_method = data.get('payment_method')
-        selected_venue = data.get('venue_id')
+def add_payment_method():
+    """Add a new payment method for the logged-in user."""
+    current_user_email = get_jwt_identity()
+    current_user = mongo.db['User'].find_one({"email": current_user_email})
 
-        if not amount or not email or not payment_method:
-            return jsonify({"message": "Missing amount, email or payment method"}), HttpCodes.HTTP_400_BAD_REQUEST
+    if not is_customer(current_user):
+        return jsonify({"message": "Access denied. Only customers can add payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
 
-        logged_in_identity = get_jwt_identity()
-        logged_in_email = logged_in_identity.get("email")
-        
-        if email != logged_in_email:
-            return jsonify({"message": "Unauthorized: Email mismatch"}), HttpCodes.HTTP_403_NOT_VERIFIED
-
-        user = User.find_by_email(logged_in_email)
-
-        if not user:
-            return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
-
-        result = payment_service.create_payment_intent(user['_id'], amount, payment_method)
-
-        # Create a VenuePayment record after the payment intent is created
-        venue_payment = PayedVenues(result.id, selected_venue)
-        venue_payment.save()
-        
-        return jsonify({
-            'client_secret': result.client_secret,
-            'status': result.status,
-            'result': result
-        }), HttpCodes.HTTP_200_OK
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), HttpCodes.HTTP_400_BAD_REQUEST
-
-@payment_method_bp.route('/all_payments', methods=['GET'])
-@jwt_required()
-def get_all_payments():
-    try:
-        # if not check_if_admin():
-        #     return jsonify({"message": "Unauthorized access"}), HttpCodes.HTTP_403_FORBIDDEN
-
-        payments = Payment.find_all()
-
-        return jsonify(payments), HttpCodes.HTTP_200_OK
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+    data = request.json
+    payment_method = PaymentMethod(
+        user_id=str(current_user['_id']),
+        card_holder_name=data['card_holder_name'],
+        card_number=data['card_number'],
+        card_expiry=data['card_expiry'],
+        card_cvv=data['card_cvv'],
+        card_type=data['card_type']
+    )
     
-@payment_method_bp.route('/payment_by_user_id', methods=['GET'])
+    result = payment_method.save()
+    if isinstance(result, ObjectId):
+        return jsonify({"message": "Payment method added successfully"}), HttpCodes.HTTP_201_OK
+    return jsonify({"error": "Failed to add payment method"}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+
+@payment_method_bp.route('/get', methods=['GET'])
 @jwt_required()
-def get_user_payments():
-    try:
-        logged_in_email = get_jwt_identity()
-        user = User.find_by_email(logged_in_email)
+def get_payment_methods():
+    """Get all payment methods for the logged-in user."""
+    current_user_email = get_jwt_identity()
+    current_user = mongo.db['User'].find_one({"email": current_user_email})
 
-        if not user:
-            return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
+    if not is_customer(current_user):
+        return jsonify({"message": "Access denied. Only customers can view payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
 
-        payments = Payment.find_by_user_id(user['_id'])
+    payment_methods = PaymentMethod.find_by_user_id(str(current_user['_id']))
+    return jsonify({"payment_methods": payment_methods}), HttpCodes.HTTP_200_OK
 
-        return jsonify(payments), HttpCodes.HTTP_200_OK
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
-
-@payment_method_bp.route('/payment_by_stripe_id/<stripe_payment_id>', methods=['GET'])
+@payment_method_bp.route('/update/<payment_id>', methods=['PUT'])
 @jwt_required()
-def get_payment_by_stripe_id(stripe_payment_id):
-    try:
-        payment = Payment.find_by_stripe_payment_id(stripe_payment_id)
+def update_payment_method(payment_id):
+    """Update an existing payment method for the logged-in user."""
+    current_user_email = get_jwt_identity()
+    current_user = mongo.db['User'].find_one({"email": current_user_email})
 
-        if not payment:
-            return jsonify({"message": "Payment not found"}), HttpCodes.HTTP_404_NOT_FOUND
+    if not is_customer(current_user):
+        return jsonify({"message": "Access denied. Only customers can update payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
 
-        return jsonify(payment), HttpCodes.HTTP_200_OK
+    data = request.json
+    result = PaymentMethod.update(payment_id, data)
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+    if result.matched_count > 0:
+        return jsonify({"message": "Payment method updated successfully"}), HttpCodes.HTTP_200_OK
+    return jsonify({"error": "Failed to update payment method"}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
 
-@payment_method_bp.route('/payment_by_status/<status>', methods=['GET'])
+@payment_method_bp.route('/delete/<payment_id>', methods=['DELETE'])
 @jwt_required()
-def get_payments_by_status(status):
-    try:
-        payments = Payment.find_by_status(status)
+def delete_payment_method(payment_id):
+    """Delete a payment method for the logged-in user."""
+    current_user_email = get_jwt_identity()
+    current_user = mongo.db['User'].find_one({"email": current_user_email})
 
-        if not payments:
-            return jsonify({"message": "No payments found for this status"}), HttpCodes.HTTP_404_NOT_FOUND
+    if not is_customer(current_user):
+        return jsonify({"message": "Access denied. Only customers can delete payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
 
-        return jsonify(payments), HttpCodes.HTTP_200_OK
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+    result = PaymentMethod.delete(payment_id)
+    if result.deleted_count > 0:
+        return jsonify({"message": "Payment method deleted successfully"}), HttpCodes.HTTP_200_OK
+    return jsonify({"error": "Failed to delete payment method"}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR

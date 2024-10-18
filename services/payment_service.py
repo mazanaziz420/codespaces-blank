@@ -1,6 +1,6 @@
 import stripe
 from config import Config
-from routes.payment_method_bp.models import Payment
+from routes.payments_bp.models import Payment
 
 class PaymentIntentService:
     def __init__(self):
