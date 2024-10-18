@@ -38,11 +38,6 @@ def create_venue_provider():
 
     try:
         venue_provider = VenueProvider(
-            first_name=data.get('firstName'),
-            last_name=data.get('lastName'),
-            email=data.get('email'),
-            phone=data.get('phone'),
-            id=data.get('id'),
             name_of_venue=data.get('nameOfVenue'),
             website=data.get('website'),
             type_of_property=data.get('typeOfProperty'),

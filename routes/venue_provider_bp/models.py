@@ -15,12 +15,7 @@ def get_user_id_by_email(email):
         return None
 
 class VenueProvider:
-    def __init__(self, first_name, last_name, email, phone, id, name_of_venue, website, type_of_property, city, address, state, capacity, size, pin_location, place_description, created_by, cover_picture=None, other_property_type=None):
-        self.first_name = first_name
-        self.last_name = last_name
-        self.email = email
-        self.phone = phone
-        self.id = id
+    def __init__(self, name_of_venue, website, type_of_property, city, address, state, capacity, size, pin_location, place_description, created_by, cover_picture=None, other_property_type=None):
         self.name_of_venue = name_of_venue
         self.website = website
         self.type_of_property = type_of_property
@@ -37,11 +32,6 @@ class VenueProvider:
 
     def save(self):
         venue_data = {
-            "first_name": self.first_name,
-            "last_name": self.last_name,
-            "email": self.email,
-            "phone": self.phone,
-            "id": self.id,
             "name_of_venue": self.name_of_venue,
             "website": self.website,
             "type_of_property": self.type_of_property,
