@@ -5,7 +5,7 @@ from .models import PaymentMethod
 from utils import HttpCodes
 from bson import ObjectId
 from models import mongo
-from helpers import is_customer
+from routes.helpers import is_customer
 
 
 payment_method_bp = Blueprint('payment_method_bp', __name__)
