@@ -17,8 +17,8 @@ def add_payment_method():
     current_user_email = get_jwt_identity()
     current_user = mongo.db['User'].find_one({"email": current_user_email['email']})
 
-    if not is_customer(current_user) or not is_venue_provider(current_user):
-        return jsonify({"message": "Access denied. Only customers and venue providers can add payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
+    # if not is_customer(current_user) or not is_venue_provider(current_user):
+    #     return jsonify({"message": "Access denied. Only customers and venue providers can add payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
 
     data = request.json
     payment_method = PaymentMethod(
