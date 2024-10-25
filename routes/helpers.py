@@ -22,4 +22,7 @@ def check_user_type(required_type):
     return None
 
 def is_customer(user):
-    return user.get("user_type") == "customer"
+    return user.get("user_type") == "CUSTOMER"
+
+def is_venue_provider(user):
+    return user.get("user_type") == "VENUE_PROVIDER"

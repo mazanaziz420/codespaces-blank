@@ -5,7 +5,7 @@ from .models import PaymentMethod
 from utils import HttpCodes
 from bson import ObjectId
 from models import mongo
-from routes.helpers import is_customer
+from routes.helpers import is_customer, is_venue_provider
 
 
 payment_method_bp = Blueprint('payment_method_bp', __name__)
@@ -17,12 +17,13 @@ def add_payment_method():
     current_user_email = get_jwt_identity()
     current_user = mongo.db['User'].find_one({"email": current_user_email})
 
-    if not is_customer(current_user):
-        return jsonify({"message": "Access denied. Only customers can add payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
+    if not is_customer(current_user) or not is_venue_provider(current_user):
+        return jsonify({"message": "Access denied. Only customers and venue providers can add payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
 
     data = request.json
     payment_method = PaymentMethod(
         user_id=str(current_user['_id']),
+        user_type=data['user_type'],
         card_holder_name=data['card_holder_name'],
         card_number=data['card_number'],
         card_expiry=data['card_expiry'],
@@ -42,11 +43,13 @@ def get_payment_methods():
     current_user_email = get_jwt_identity()
     current_user = mongo.db['User'].find_one({"email": current_user_email})
 
-    if not is_customer(current_user):
-        return jsonify({"message": "Access denied. Only customers can view payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
+    # if not is_customer(current_user):
+    #     return jsonify({"message": "Access denied. Only customers can view payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
 
     payment_methods = PaymentMethod.find_by_user_id(str(current_user['_id']))
-    return jsonify({"payment_methods": payment_methods}), HttpCodes.HTTP_200_OK
+    if payment_methods:
+        return jsonify({"payment_methods": payment_methods}), HttpCodes.HTTP_200_OK
+    return jsonify({"error": "Failed to get payment methods"}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
 
 @payment_method_bp.route('/update/<payment_id>', methods=['PUT'])
 @jwt_required()
