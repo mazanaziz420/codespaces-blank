@@ -6,6 +6,7 @@ from services.verification_service import generate_verification_code
 from werkzeug.security import generate_password_hash
 from .models import *
 from utils import HttpCodes
+from bson import ObjectId
 
 users_bp = Blueprint('users_bp', __name__)
 
@@ -96,13 +97,43 @@ def update_user():
 
     # Update the user record in the database
     result = mongo.db['User'].update_one(
-        {"_id": current_user['_id']},
+        {"_id": ObjectId(current_user['_id'])},
         {"$set": update_data}
     )
 
     if result.matched_count > 0:
         return jsonify({"message": "User details updated successfully"}), HttpCodes.HTTP_200_OK
     return jsonify({"error": "Failed to update user details"}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+
+@users_bp.route('/user/delete', methods=['DELETE'])
+@jwt_required()
+def delete_user():
+    current_user_email = get_jwt_identity()
+    current_user = User.find_by_email(current_user_email)
+    
+    if not current_user:
+        return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
+    
+    result = mongo.db['VenueProvider'].delete_one({'_id': ObjectId(current_user['_id'])})
+    
+    if result:
+        return jsonify({"message": "User deleted successfully"}), HttpCodes.HTTP_200_OK
+    return jsonify({"error": "Failed to delete user"}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+    
+@users_bp.route('/verify_password', methods=['POST'])
+@jwt_required()
+def verify_password():
+    data = request.json
+    current_user_email = get_jwt_identity()
+    user = User.find_by_email(current_user_email)
+
+    if not user:
+        return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
+
+    if not check_password_hash(user['password'], data['password']):
+        return jsonify({"message": "Invalid password"}), HttpCodes.HTTP_401_UNAUTHORIZED
+
+    return jsonify({"message": "Password verified successfully"}), HttpCodes.HTTP_200_OK
 
 @users_bp.route('/get_vcode', methods=['POST'])
 def get_verification_code():
