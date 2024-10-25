@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from services.auth_service import generate_access_token
 from services.email_service import send_verification_email
 from services.verification_service import generate_verification_code
@@ -68,6 +69,40 @@ def login():
         "token": token,
         "user": user_info
     }), HttpCodes.HTTP_200_OK
+
+@users_bp.route('/user/update', methods=['PUT'])
+@jwt_required()
+def update_user():
+    """Update user details for the logged-in user."""
+    current_user_email = get_jwt_identity()
+    current_user = User.find_by_email(current_user_email)
+
+    if not current_user:
+        return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
+
+    data = request.json
+    update_data = {}
+
+    # Update fields if provided in the request
+    if 'email' in data:
+        update_data['email'] = data['email']
+    if 'full_name' in data:
+        update_data['full_name'] = data['full_name']
+    if 'username' in data:
+        update_data['username'] = data['username']
+
+    if not update_data:
+        return jsonify({"message": "No data provided for update"}), HttpCodes.HTTP_400_BAD_REQUEST
+
+    # Update the user record in the database
+    result = mongo.db['User'].update_one(
+        {"_id": current_user['_id']},
+        {"$set": update_data}
+    )
+
+    if result.matched_count > 0:
+        return jsonify({"message": "User details updated successfully"}), HttpCodes.HTTP_200_OK
+    return jsonify({"error": "Failed to update user details"}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
 
 @users_bp.route('/get_vcode', methods=['POST'])
 def get_verification_code():
