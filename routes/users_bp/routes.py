@@ -76,7 +76,7 @@ def login():
 def update_user():
     """Update user details for the logged-in user."""
     current_user_email = get_jwt_identity()
-    current_user = User.find_by_email(current_user_email)
+    current_user = User.find_by_email(current_user_email['email'])
 
     if not current_user:
         return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
@@ -109,7 +109,7 @@ def update_user():
 @jwt_required()
 def delete_user():
     current_user_email = get_jwt_identity()
-    current_user = User.find_by_email(current_user_email)
+    current_user = User.find_by_email(current_user_email['email'])
     
     if not current_user:
         return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
@@ -125,7 +125,7 @@ def delete_user():
 def verify_password():
     data = request.json
     current_user_email = get_jwt_identity()
-    user = User.find_by_email(current_user_email)
+    user = User.find_by_email(current_user_email['email'])
 
     if not user:
         return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND

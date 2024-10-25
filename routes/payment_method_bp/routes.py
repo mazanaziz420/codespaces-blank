@@ -15,7 +15,7 @@ payment_method_bp = Blueprint('payment_method_bp', __name__)
 def add_payment_method():
     """Add a new payment method for the logged-in user."""
     current_user_email = get_jwt_identity()
-    current_user = mongo.db['User'].find_one({"email": current_user_email})
+    current_user = mongo.db['User'].find_one({"email": current_user_email['email']})
 
     if not is_customer(current_user) or not is_venue_provider(current_user):
         return jsonify({"message": "Access denied. Only customers and venue providers can add payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
@@ -40,23 +40,29 @@ def add_payment_method():
 @jwt_required()
 def get_payment_methods():
     """Get all payment methods for the logged-in user."""
-    current_user_email = get_jwt_identity()
-    current_user = mongo.db['User'].find_one({"email": current_user_email})
+    try:
+        current_user_email = get_jwt_identity()
+        current_user = mongo.db['User'].find_one({"email": current_user_email['email']})
+        if current_user is None:
+            return jsonify({"error": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
 
-    # if not is_customer(current_user):
-    #     return jsonify({"message": "Access denied. Only customers can view payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
+        # if not is_customer(current_user):
+        #     return jsonify({"message": "Access denied. Only customers can view payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
 
-    payment_methods = PaymentMethod.find_by_user_id(str(current_user['_id']))
-    if payment_methods:
-        return jsonify({"payment_methods": payment_methods}), HttpCodes.HTTP_200_OK
-    return jsonify({"error": "Failed to get payment methods"}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+        payment_methods = PaymentMethod.find_by_user_id(str(current_user['_id']))
+        if payment_methods:
+            return jsonify({"payment_methods": payment_methods}), HttpCodes.HTTP_200_OK
+        else:
+            return jsonify({"payment_methods": []}), HttpCodes.HTTP_400_BAD_REQUEST
+    except Exception as e:
+        return jsonify({"message": "Failed to get payment methods", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
 
 @payment_method_bp.route('/update/<payment_id>', methods=['PUT'])
 @jwt_required()
 def update_payment_method(payment_id):
     """Update an existing payment method for the logged-in user."""
     current_user_email = get_jwt_identity()
-    current_user = mongo.db['User'].find_one({"email": current_user_email})
+    current_user = mongo.db['User'].find_one({"email": current_user_email['email']})
 
     if not is_customer(current_user):
         return jsonify({"message": "Access denied. Only customers can update payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
@@ -73,7 +79,7 @@ def update_payment_method(payment_id):
 def delete_payment_method(payment_id):
     """Delete a payment method for the logged-in user."""
     current_user_email = get_jwt_identity()
-    current_user = mongo.db['User'].find_one({"email": current_user_email})
+    current_user = mongo.db['User'].find_one({"email": current_user_email['email']})
 
     if not is_customer(current_user):
         return jsonify({"message": "Access denied. Only customers can delete payment methods."}), HttpCodes.HTTP_403_NOT_VERIFIED
