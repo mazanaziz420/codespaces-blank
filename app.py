@@ -3,6 +3,7 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from config import Config
 from models import init_app
+from socketio_instance import socketio
 from routes.users_bp.routes import users_bp
 from routes.venue_provider_bp.routes import venue_provider_bp
 from routes.vendor_bp.routes import vendor_bp
@@ -18,6 +19,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 jwt = JWTManager(app)
 
 init_app(app)
+socketio.init_app(app)
 
 app.register_blueprint(users_bp, url_prefix='/')
 app.register_blueprint(venue_provider_bp, url_prefix='/venueProvider')
@@ -27,4 +29,4 @@ app.register_blueprint(bookings_bp, url_prefix='/booking')
 app.register_blueprint(payment_method_bp, url_prefix='/payment_method')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True)

@@ -5,6 +5,8 @@ from services.email_service import send_verification_email
 from services.verification_service import generate_verification_code
 from werkzeug.security import generate_password_hash
 from .models import *
+from routes.bookings_bp.models import Notification
+from routes.venue_provider_bp.models import get_user_id_by_email
 from utils import HttpCodes
 from bson import ObjectId
 
@@ -215,5 +217,51 @@ def get_all_users():
         ]
 
         return jsonify({"users": user_list}), HttpCodes.HTTP_200_OK
+    except Exception as e:
+        return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+
+@users_bp.route('/notifications', methods=['GET'])
+@jwt_required()
+def get_notifications():
+    try:
+        current_user = get_jwt_identity()
+        print(current_user)
+        user_id = get_user_id_by_email(current_user.get('email'))
+        is_read = request.args.get('is_read')
+        is_read = True if is_read == 'true' else False if is_read == 'false' else None
+
+        notifications = Notification.find_by_user_id(user_id, is_read=is_read)
+        if notifications:
+            return jsonify({"notifications": notifications}), HttpCodes.HTTP_200_OK
+        else:
+            return jsonify({"notifications": []}), HttpCodes.HTTP_400_BAD_REQUEST
+    except Exception as e:
+        return jsonify({"message": "Failed to get notification.", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+    
+@users_bp.route('/notifications/<notification_id>/read', methods=['PATCH'])
+@jwt_required()
+def mark_notification_as_read(notification_id):
+    try:
+        result = Notification.mark_as_read(notification_id)
+        if result.modified_count == 0:
+            return jsonify({"message": "Notification not found or already marked as read"}), HttpCodes.HTTP_404_NOT_FOUND
+
+        return jsonify({"message": "Notification marked as read"}), HttpCodes.HTTP_200_OK
+    except Exception as e:
+        return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+    
+@users_bp.route('/notifications/read-all', methods=['PATCH'])
+@jwt_required()
+def mark_all_notifications_as_read():
+    user_id = get_jwt_identity()
+    try:
+        result = mongo.db['Notifications'].update_many(
+            {"user_id": ObjectId(user_id), "is_read": False},
+            {"$set": {"is_read": True}}
+        )
+        if result.modified_count == 0:
+            return jsonify({"message": "No unread notifications found"}), HttpCodes.HTTP_404_NOT_FOUND
+
+        return jsonify({"message": f"{result.modified_count} notifications marked as read"}), HttpCodes.HTTP_200_OK
     except Exception as e:
         return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR

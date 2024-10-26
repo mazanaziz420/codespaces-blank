@@ -1,12 +1,13 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from utils import HttpCodes
-from .models import Booking
+from .models import Booking, Notification
 from models import mongo
 from bson import ObjectId
 from services.email_service import send_booking_status_notification_to_customer, send_booking_request_notification_to_provider
 from routes.venue_provider_bp.models import VenueProvider, get_user_id_by_email
 from routes.users_bp.models import User
+from socketio_instance import socketio
 
 bookings_bp = Blueprint('bookings_bp', __name__)
 
@@ -84,14 +85,27 @@ def book_venue(venue_id):
         venue = mongo.db['VenueProvider'].find_one({"_id": ObjectId(venue_id)})
         provider_email = venue['email']
         venue_name = venue['name_of_venue']
-
+        venue_provider_id = venue['created_by']
         # Fetch customer details for notification
         customer = User.find_by_email(data['customer_email'])
         customer_name = customer['full_name']
 
         # Notify venue provider about the booking request
         send_booking_request_notification_to_provider(provider_email, venue_name, customer_name, booking_date_range)
-
+        
+        notification = Notification(
+            user_id=venue_provider_id,
+            message=f"You received a booking request from {customer_name} for {venue_name}",
+            venue_id=venue_id,
+            booking_id=booking_id
+        )
+        notification.save()
+        
+        socketio.emit('booking_request', {
+            'message': f"You received a booking request from {customer_name} for {venue_name}",
+            'venue_id': str(venue_id),
+            'customer_name': customer_name
+        }, namespace='/notifications')
         return jsonify({"message": "Booking request submitted", "booking_id": str(booking_id)}), HttpCodes.HTTP_201_OK
     except Exception as e:
         return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
@@ -113,8 +127,22 @@ def accept_booking(booking_id):
         customer = mongo.db['User'].find_one({"_id": customer_id})
         customer_email = customer['email']
 
+        notification = Notification(
+            user_id=customer_id,
+            message=f"Your booking request for {venue_name} has been accepted.",
+            booking_id=booking_id,
+            venue_id=venue_id
+            
+        )
+        notification.save()
+        
         # Notify the customer about the booking acceptance
         send_booking_status_notification_to_customer(customer_email, venue_name, 'accepted')
+        
+        socketio.emit('booking_status', {
+            'message': f"Your booking request for {venue_name} has been accepted.",
+            'booking_id': str(booking_id)
+        }, namespace='/notifications')
 
         return jsonify({"message": "Booking accepted"}), HttpCodes.HTTP_200_OK
     except Exception as e:
@@ -137,9 +165,22 @@ def reject_booking(booking_id):
         customer = mongo.db['User'].find_one({"_id": customer_id})
         customer_email = customer['email']
 
+        notification = Notification(
+            user_id=customer_id,
+            message=f"Your booking request for {venue_name} has been rejected.",
+            booking_id=booking_id,
+            venue_id=venue_id
+        )
+        notification.save()
+        
         # Notify the customer about the booking rejection
         send_booking_status_notification_to_customer(customer_email, venue_name, 'rejected')
-
+        
+        socketio.emit('booking_status', {
+            'message': f"Your booking request for {venue_name} has been rejected.",
+            'booking_id': str(booking_id)
+        }, namespace='/notifications')
+        
         return jsonify({"message": "Booking rejected"}), HttpCodes.HTTP_200_OK
     except Exception as e:
         return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
