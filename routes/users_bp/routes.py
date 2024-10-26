@@ -225,7 +225,6 @@ def get_all_users():
 def get_notifications():
     try:
         current_user = get_jwt_identity()
-        print(current_user)
         user_id = get_user_id_by_email(current_user.get('email'))
         is_read = request.args.get('is_read')
         is_read = True if is_read == 'true' else False if is_read == 'false' else None

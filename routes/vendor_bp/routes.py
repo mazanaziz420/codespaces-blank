@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from .models import *
+from routes.venue_provider_bp.routes import get_user_id_by_email
 from ..helpers import *
 from utils import HttpCodes
 
@@ -12,6 +13,8 @@ def create_vendor():
     auth_check = check_user_type('VENDOR')
     if auth_check:
         return auth_check
+    current_user = get_jwt_identity()
+    user_id = get_user_id_by_email(current_user.get('email'))
     data = request.form
     files = request.files
 
@@ -38,7 +41,8 @@ def create_vendor():
             address=data.get('address'),
             door_to_door_service=data.get('doorToDoorService') == 'true',
             description=data.get('description'),
-            cover_picture=cover_picture_url
+            cover_picture=cover_picture_url,
+            created_by=user_id
         )
         vendor_id = vendor.save()
 

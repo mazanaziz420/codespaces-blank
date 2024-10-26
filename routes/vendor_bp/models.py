@@ -3,7 +3,7 @@ from bson import ObjectId
 from models import mongo
 
 class Vendor:
-    def __init__(self, category, subcategory, name, city, state, zip_code, address, door_to_door_service, description, cover_picture=None):
+    def __init__(self, category, subcategory, name, city, state, zip_code, address, door_to_door_service, description, created_by, cover_picture=None):
         self.category = category
         self.subcategory = subcategory
         self.name = name
@@ -14,6 +14,7 @@ class Vendor:
         self.door_to_door_service = door_to_door_service
         self.description = description
         self.cover_picture = cover_picture
+        self.created_by = created_by
 
     def save(self):
         vendor_data = {
@@ -27,6 +28,7 @@ class Vendor:
             "door_to_door_service": self.door_to_door_service,
             "description": self.description,
             "cover_picture": self.cover_picture,
+            "created_by": self.created_by
         }
         try:
             result = mongo.db['Vendors'].insert_one(vendor_data)
