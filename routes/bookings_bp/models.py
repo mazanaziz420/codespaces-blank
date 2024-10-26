@@ -55,3 +55,51 @@ class Booking:
         except Exception as e:
             print(str(e))
             return e
+
+class Notification:
+    def __init__(self, user_id, message, venue_id, booking_id, is_read=False):
+        self.user_id = ObjectId(user_id)
+        self.message = message
+        self.venue_id = ObjectId(venue_id)  # Can be a booking or venue ID
+        self.booking_id = ObjectId(booking_id)
+        self.is_read = is_read
+        self.created_at = datetime.utcnow()
+
+    def save(self):
+        notification_data = {
+            "user_id": self.user_id,
+            "message": self.message,
+            "venue_id": self.venue_id,
+            "booking_id": self.booking_id,
+            "is_read": self.is_read,
+            "created_at": self.created_at
+        }
+        try:
+            result = mongo.db['Notifications'].insert_one(notification_data)
+            return result.inserted_id
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def find_by_user_id(user_id, is_read=None):
+        query = {"user_id": ObjectId(user_id)}
+        if is_read is not None:
+            query["is_read"] = is_read
+        try:
+            notifications = mongo.db['Notifications'].find(query).sort("created_at", -1)
+            return [{**notification, '_id': str(notification['_id'])} for notification in notifications]
+        except Exception as e:
+            print(str(e))
+            return e
+
+    @staticmethod
+    def mark_as_read(notification_id):
+        try:
+            return mongo.db['Notifications'].update_one(
+                {'_id': ObjectId(notification_id)},
+                {'$set': {'is_read': True}}
+            )
+        except Exception as e:
+            print(str(e))
+            return e
