@@ -13,6 +13,7 @@ bookings_bp = Blueprint('bookings_bp', __name__)
 
 def get_entity_details(entity_id, entity_type):
     """Fetch details of either a venue or vendor based on the entity type."""
+    
     if entity_type == 'venue':
         entity = mongo.db['VenueProvider'].find_one({"_id": ObjectId(entity_id)})
         if entity:
