@@ -121,3 +121,50 @@ def send_booking_status_notification_to_customer(customer_email, venue_name, sta
         mailjet.send.create(data=data)
     except Exception as e:
         print(f"Failed to send notification to customer {customer_email}: {str(e)}")
+
+def send_hire_notification(staff_email, hirer_name, hirer_type, requested_dates):
+    """Notify staff about a new hire request."""
+    subject = "New Hire Request"
+    html_part = f"""
+    <div>
+        <p>Hello,</p>
+        <p>You have received a new hire request from <strong>{hirer_name}</strong> ({hirer_type}).</p>
+        <p>Requested Dates: {', '.join(requested_dates)}</p>
+        <p>Please log in to your dashboard to accept or reject this request.</p>
+    </div>
+    """
+    data = {
+        'Messages': [{
+            "From": {"Email": "Mazanaziz420@gmail.com", "Name": "EvePlan.pk"},
+            "To": [{"Email": staff_email, "Name": "Staff"}],
+            "Subject": subject,
+            "HTMLPart": html_part
+        }]
+    }
+    try:
+        mailjet.send.create(data=data)
+    except Exception as e:
+        print(f"Failed to send hire notification to {staff_email}: {str(e)}")
+
+def send_hire_status_notification(hirer_email, staff_name, status, requested_dates):
+    """Notify hirer about the hire request status update."""
+    subject = f"Your Hire Request has been {status}"
+    html_part = f"""
+    <div>
+        <p>Hello,</p>
+        <p>Your hire request for <strong>{staff_name}</strong> has been <strong>{status}</strong>.</p>
+        <p>Requested Dates: {', '.join(requested_dates)}</p>
+    </div>
+    """
+    data = {
+        'Messages': [{
+            "From": {"Email": "Mazanaziz420@gmail.com", "Name": "EvePlan.pk"},
+            "To": [{"Email": hirer_email, "Name": "Hirer"}],
+            "Subject": subject,
+            "HTMLPart": html_part
+        }]
+    }
+    try:
+        mailjet.send.create(data=data)
+    except Exception as e:
+        print(f"Failed to send hire status notification to {hirer_email}: {str(e)}")

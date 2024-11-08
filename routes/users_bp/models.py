@@ -1,5 +1,6 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import mongo
+from bson import ObjectId
 
 class User:
     def __init__(self, email, password, full_name, username, user_type, verification_code):
@@ -21,6 +22,7 @@ class User:
             "verification_code": self.verification_code,
             "is_verified": self.is_verified
         }
+
         try:
             return mongo.db['User'].insert_one(user_data)
         except Exception as e:
@@ -38,3 +40,11 @@ class User:
     @staticmethod
     def verify_password(stored_password, provided_password):
         return check_password_hash(stored_password, provided_password)
+    
+    @staticmethod
+    def get_by_id(user_id):
+        try:
+            return list(mongo.db['User'].find({"_id": ObjectId(user_id)}))
+        except Exception as e:
+            print(str(e))
+            return e

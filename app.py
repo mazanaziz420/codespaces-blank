@@ -10,6 +10,8 @@ from routes.vendor_bp.routes import vendor_bp
 from routes.payments_bp.routes import payments_bp
 from routes.bookings_bp.routes import bookings_bp
 from routes.payment_method_bp.routes import payment_method_bp
+from routes.staff_bp.routes import staff_bp
+from routes.hire_staff_bp.routes import hiring_staff_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -27,6 +29,8 @@ app.register_blueprint(vendor_bp, url_prefix='/vendor')
 app.register_blueprint(payments_bp, url_prefix='/payment')
 app.register_blueprint(bookings_bp, url_prefix='/booking')
 app.register_blueprint(payment_method_bp, url_prefix='/payment_method')
+app.register_blueprint(staff_bp, url_prefix='/staff')
+app.register_blueprint(hiring_staff_bp)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

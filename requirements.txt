@@ -11,4 +11,5 @@ imagekitio
 pytest
 pytest-flask
 Flask-Testing
+Flask-Socketio
 stripe

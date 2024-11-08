@@ -9,6 +9,7 @@ from routes.bookings_bp.models import Notification
 from routes.venue_provider_bp.models import get_user_id_by_email
 from utils import HttpCodes
 from bson import ObjectId
+from routes.staff_bp.models import Staff
 
 users_bp = Blueprint('users_bp', __name__)
 
@@ -106,21 +107,6 @@ def update_user():
     if result.matched_count > 0:
         return jsonify({"message": "User details updated successfully"}), HttpCodes.HTTP_200_OK
     return jsonify({"error": "Failed to update user details"}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
-
-@users_bp.route('/user/delete', methods=['DELETE'])
-@jwt_required()
-def delete_user():
-    current_user_email = get_jwt_identity()
-    current_user = User.find_by_email(current_user_email['email'])
-    
-    if not current_user:
-        return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
-    
-    result = mongo.db['VenueProvider'].delete_one({'_id': ObjectId(current_user['_id'])})
-    
-    if result:
-        return jsonify({"message": "User deleted successfully"}), HttpCodes.HTTP_200_OK
-    return jsonify({"error": "Failed to delete user"}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
     
 @users_bp.route('/verify_password', methods=['POST'])
 @jwt_required()
@@ -219,7 +205,44 @@ def get_all_users():
         return jsonify({"users": user_list}), HttpCodes.HTTP_200_OK
     except Exception as e:
         return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+    
+@users_bp.route('/user/delete', methods=['DELETE'])
+@jwt_required()
+def delete_user():
+    """
+    Delete a user account after verifying the password.
 
+    If the user is of type 'STAFF', also delete associated data from the Staff collection.
+    """
+    data = request.json
+    if 'password' not in data:
+        return jsonify({"message": "Password is required"}), HttpCodes.HTTP_400_BAD_REQUEST
+
+    # Get current user's email and find user document
+    current_user_email = get_jwt_identity()
+    current_user = User.find_by_email(current_user_email)
+
+    if not current_user:
+        return jsonify({"message": "User not found"}), HttpCodes.HTTP_404_NOT_FOUND
+
+    # Verify the provided password
+    if not check_password_hash(current_user['password'], data['password']):
+        return jsonify({"message": "Incorrect password"}), HttpCodes.HTTP_401_UNAUTHORIZED
+
+    # Delete user from the 'User' collection
+    user_deletion_result = mongo.db['User'].delete_one({'_id': ObjectId(current_user['_id'])})
+
+    if user_deletion_result.deleted_count == 1:
+        # Check if user is of type 'STAFF' and delete related staff data
+        if current_user.get('user_type') == 'STAFF':
+            staff_deletion_result = Staff.delete_by_id(current_user['_id'])
+            if staff_deletion_result.deleted_count == 0:
+                return jsonify({"message": "User deleted, but no related staff data found"}), HttpCodes.HTTP_200_OK
+
+        return jsonify({"message": "User and associated staff data deleted successfully"}), HttpCodes.HTTP_200_OK
+    else:
+        return jsonify({"error": "Failed to delete user"}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+    
 @users_bp.route('/notifications', methods=['GET'])
 @jwt_required()
 def get_notifications():
