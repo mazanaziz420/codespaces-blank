@@ -279,9 +279,51 @@ def reject_hire_request(hire_request_id):
     except Exception as e:
         return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
     
+@hiring_staff_bp.route('/hire_requests_by_hirer_id', methods=['GET'])
+@jwt_required()
+def get_hire_requests_by_hirer_id():
+    current_user = get_jwt_identity()
+    hirer_id = get_user_id_by_email(current_user["email"])
+
+    try:
+        # Filter hire requests by hirer_id and eventType
+        hire_requests = list(mongo.db['HireRequests'].find({
+            "hirer_id": ObjectId(hirer_id)
+        }))
+        
+        # Prepare the response
+        result = []
+        for request in hire_requests:
+            staff = mongo.db['Staff'].find_one({"_id": request["staff_id"]})
+            staff_details = mongo.db['User'].find_one({"_id": staff["user_id"]})
+            
+            request_data = {
+                "hire_request_id": str(request["_id"]),
+                "requested_dates": request["requested_dates"],
+                "message": request["message"],
+                "time": request["time"],
+                "wageOffered": request["wageOffered"],
+                "city": request["city"],
+                "venueLocation": request["venueLocation"],
+                "eventType": request["eventType"],
+                "numberOfGuests": request["numberOfGuests"],
+                "status": request["status"],
+                "staff_details": {
+                    "name": staff_details.get("full_name"),
+                    "email": staff_details.get("email"),
+                }
+            }
+            result.append(request_data)
+
+        return jsonify(result), HttpCodes.HTTP_200_OK
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+    
 @hiring_staff_bp.route('/hire_requests', methods=['GET'])
 @jwt_required()
-def get_hire_requests_by_event_type():
+@validate_hiring_permission(user_type_required='STAFF')
+def get_hire_requests():
     current_user = get_jwt_identity()
     hirer_id = get_user_id_by_email(current_user["email"])
 
