@@ -325,13 +325,15 @@ def get_hire_requests_by_hirer_id():
 @validate_hiring_permission(user_type_required='STAFF')
 def get_hire_requests():
     current_user = get_jwt_identity()
-    staff_id = get_user_id_by_email(current_user["email"])
-
+    user_id = get_user_id_by_email(current_user["email"])
+    staff_id = mongo.db['Staff'].find_one({"user_id": ObjectId(user_id)})
+    
     try:
-        # Filter hire requests by hirer_id and eventType
+        # Filter hire requests by staff_id
         hire_requests = list(mongo.db['HireRequests'].find({
-            "_id": ObjectId(staff_id)
+            "staff_id": ObjectId(staff_id['_id'])
         }))
+        print(hire_requests)
         
         # Prepare the response
         result = []
@@ -342,13 +344,13 @@ def get_hire_requests():
             request_data = {
                 "hire_request_id": str(request["_id"]),
                 "requested_dates": request["requested_dates"],
-                "message": request["message"],
-                "time": request["time"],
-                "wageOffered": request["wageOffered"],
-                "city": request["city"],
-                "venueLocation": request["venueLocation"],
-                "eventType": request["eventType"],
-                "numberOfGuests": request["numberOfGuests"],
+                "message": request.get("message", ""),  # Use .get() to avoid KeyError
+                "time": request.get("time", ""),  # Handle missing "time" field if necessary
+                "wageOffered": request.get("wageOffered", ""),
+                "city": request.get("city", ""),
+                "venueLocation": request.get("venueLocation", ""),
+                "eventType": request.get("eventType", ""),
+                "numberOfGuests": request.get("numberOfGuests", 0),
                 "status": request["status"],
                 "staff_details": {
                     "name": staff_details.get("full_name"),
