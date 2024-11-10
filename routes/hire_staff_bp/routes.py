@@ -286,7 +286,7 @@ def get_hire_requests_by_hirer_id():
     hirer_id = get_user_id_by_email(current_user["email"])
 
     try:
-        # Filter hire requests by hirer_id and eventType
+        # Filter hire requests by hirer_id
         hire_requests = list(mongo.db['HireRequests'].find({
             "hirer_id": ObjectId(hirer_id)
         }))
@@ -299,18 +299,18 @@ def get_hire_requests_by_hirer_id():
             
             request_data = {
                 "hire_request_id": str(request["_id"]),
-                "requested_dates": request["requested_dates"],
-                "message": request["message"],
-                "time": request["time"],
-                "wageOffered": request["wageOffered"],
-                "city": request["city"],
-                "venueLocation": request["venueLocation"],
-                "eventType": request["eventType"],
-                "numberOfGuests": request["numberOfGuests"],
-                "status": request["status"],
+                "requested_dates": request.get("requested_dates", []),  # Provide an empty list if not present
+                "message": request.get("message", ""),                  # Default to an empty string if not present
+                "time": request.get("time", ""),
+                "wageOffered": request.get("wageOffered", 0),
+                "city": request.get("city", ""),
+                "venueLocation": request.get("venueLocation", ""),
+                "eventType": request.get("eventType", ""),
+                "numberOfGuests": request.get("numberOfGuests", 0),
+                "status": request.get("status", "pending"),
                 "staff_details": {
-                    "name": staff_details.get("full_name"),
-                    "email": staff_details.get("email"),
+                    "name": staff_details.get("full_name", "Unknown"),
+                    "email": staff_details.get("email", "")
                 }
             }
             result.append(request_data)
