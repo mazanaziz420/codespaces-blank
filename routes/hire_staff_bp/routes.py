@@ -325,12 +325,12 @@ def get_hire_requests_by_hirer_id():
 @validate_hiring_permission(user_type_required='STAFF')
 def get_hire_requests():
     current_user = get_jwt_identity()
-    hirer_id = get_user_id_by_email(current_user["email"])
+    staff_id = get_user_id_by_email(current_user["email"])
 
     try:
         # Filter hire requests by hirer_id and eventType
         hire_requests = list(mongo.db['HireRequests'].find({
-            "hirer_id": ObjectId(hirer_id)
+            "_id": ObjectId(staff_id)
         }))
         
         # Prepare the response
