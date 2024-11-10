@@ -279,21 +279,16 @@ def reject_hire_request(hire_request_id):
     except Exception as e:
         return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
     
-@hiring_staff_bp.route('/hire_requests_by_event_type', methods=['POST'])
+@hiring_staff_bp.route('/hire_requests', methods=['GET'])
 @jwt_required()
 def get_hire_requests_by_event_type():
     current_user = get_jwt_identity()
     hirer_id = get_user_id_by_email(current_user["email"])
-    event_type = request.json.get('eventType')
-    
-    if not event_type:
-        return jsonify({"error": "Please provide an 'eventType'"}), HttpCodes.HTTP_400_BAD_REQUEST
 
     try:
         # Filter hire requests by hirer_id and eventType
         hire_requests = list(mongo.db['HireRequests'].find({
-            "hirer_id": ObjectId(hirer_id),
-            "eventType": event_type
+            "hirer_id": ObjectId(hirer_id)
         }))
         
         # Prepare the response
