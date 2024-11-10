@@ -3,11 +3,20 @@ from datetime import datetime
 from models import mongo
 
 class HireRequest:
-    def __init__(self, staff_id, hirer_id, hirer_type, requested_dates, status='pending'):
+    def __init__(self, staff_id, hirer_id, hirer_type, requested_dates, 
+                 message, time, wageOffered, city, venueLocation, 
+                 eventType, numberOfGuests, status='pending'):
         self.staff_id = ObjectId(staff_id)
         self.hirer_id = ObjectId(hirer_id)
         self.hirer_type = hirer_type  # 'customer' or 'venue_provider'
         self.requested_dates = requested_dates
+        self.message = message
+        self.time = time
+        self.wageOffered = wageOffered
+        self.city = city
+        self.venueLocation = venueLocation
+        self.eventType = eventType
+        self.numberOfGuests = numberOfGuests
         self.status = status
         self.requested_at = datetime.utcnow()
         self.updated_at = datetime.utcnow()
@@ -18,6 +27,13 @@ class HireRequest:
             "hirer_id": self.hirer_id,
             "hirer_type": self.hirer_type,
             "requested_dates": self.requested_dates,
+            "message": self.message,
+            "time": self.time,
+            "wageOffered": self.wageOffered,
+            "city": self.city,
+            "venueLocation": self.venueLocation,
+            "eventType": self.eventType,
+            "numberOfGuests": self.numberOfGuests,
             "status": self.status,
             "requested_at": self.requested_at,
             "updated_at": self.updated_at

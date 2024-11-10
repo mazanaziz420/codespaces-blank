@@ -51,13 +51,29 @@ def customer_hire_staff(staff_id):
     if check_staff_availability(staff_id, requested_dates):
         return jsonify({"error": "The staff is already booked on one or more of the requested dates."}), HttpCodes.HTTP_400_BAD_REQUEST
 
+    # Extract additional data from request
+    message = request.json.get('message')
+    time = request.json.get('time')
+    wageOffered = request.json.get('wageOffered')
+    city = request.json.get('city')
+    venueLocation = request.json.get('venueLocation')
+    eventType = request.json.get('eventType')
+    numberOfGuests = request.json.get('numberOfGuests')
+
     try:
         # Save the hire request
         hire_request = HireRequest(
             staff_id=staff_id,
             hirer_id=user_id,
             hirer_type=hirer_type,
-            requested_dates=requested_dates
+            requested_dates=requested_dates,
+            message=message,
+            time=time,
+            wageOffered=wageOffered,
+            city=city,
+            venueLocation=venueLocation,
+            eventType=eventType,
+            numberOfGuests=numberOfGuests
         )
         hire_request_id = hire_request.save()
 
@@ -113,13 +129,29 @@ def venue_provider_hire_staff(staff_id):
     if check_staff_availability(staff_id, requested_dates):
         return jsonify({"error": "The staff is already booked on one or more of the requested dates."}), HttpCodes.HTTP_400_BAD_REQUEST
 
+    # Extract additional data from request
+    message = request.json.get('message')
+    time = request.json.get('time')
+    wageOffered = request.json.get('wageOffered')
+    city = request.json.get('city')
+    venueLocation = request.json.get('venueLocation')
+    eventType = request.json.get('eventType')
+    numberOfGuests = request.json.get('numberOfGuests')
+
     try:
         # Save the hire request
         hire_request = HireRequest(
             staff_id=staff_id,
             hirer_id=user_id,
             hirer_type=hirer_type,
-            requested_dates=requested_dates
+            requested_dates=requested_dates,
+            message=message,
+            time=time,
+            wageOffered=wageOffered,
+            city=city,
+            venueLocation=venueLocation,
+            eventType=eventType,
+            numberOfGuests=numberOfGuests
         )
         hire_request_id = hire_request.save()
 
@@ -244,5 +276,51 @@ def reject_hire_request(hire_request_id):
 
         return jsonify({"message": "Hire request rejected"}), HttpCodes.HTTP_200_OK
     
+    except Exception as e:
+        return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+    
+@hiring_staff_bp.route('/hire_requests_by_event_type', methods=['POST'])
+@jwt_required()
+def get_hire_requests_by_event_type():
+    current_user = get_jwt_identity()
+    hirer_id = get_user_id_by_email(current_user["email"])
+    event_type = request.json.get('eventType')
+    
+    if not event_type:
+        return jsonify({"error": "Please provide an 'eventType'"}), HttpCodes.HTTP_400_BAD_REQUEST
+
+    try:
+        # Filter hire requests by hirer_id and eventType
+        hire_requests = list(mongo.db['HireRequests'].find({
+            "hirer_id": ObjectId(hirer_id),
+            "eventType": event_type
+        }))
+        
+        # Prepare the response
+        result = []
+        for request in hire_requests:
+            staff = mongo.db['Staff'].find_one({"_id": request["staff_id"]})
+            staff_details = mongo.db['User'].find_one({"_id": staff["user_id"]})
+            
+            request_data = {
+                "hire_request_id": str(request["_id"]),
+                "requested_dates": request["requested_dates"],
+                "message": request["message"],
+                "time": request["time"],
+                "wageOffered": request["wageOffered"],
+                "city": request["city"],
+                "venueLocation": request["venueLocation"],
+                "eventType": request["eventType"],
+                "numberOfGuests": request["numberOfGuests"],
+                "status": request["status"],
+                "staff_details": {
+                    "name": staff_details.get("full_name"),
+                    "email": staff_details.get("email"),
+                }
+            }
+            result.append(request_data)
+
+        return jsonify(result), HttpCodes.HTTP_200_OK
+
     except Exception as e:
         return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
