@@ -3,7 +3,7 @@ from datetime import datetime
 from models import mongo
 
 class Booking:
-    def __init__(self, customer_id, booking_date_range, status='pending', venue_id=None, venue_provider_id=None, vendor_id=None, vendor_provider_id=None):
+    def __init__(self, customer_id, booking_date_range, status='pending', venue_id=None, venue_provider_id=None, vendor_id=None, vendor_provider_id=None, paymentStatus='UnPaid'):
         self.customer_id = ObjectId(customer_id)
         self.venue_id = ObjectId(venue_id) if venue_id else None
         self.venue_provider_id = ObjectId(venue_provider_id) if venue_provider_id else None
@@ -13,6 +13,7 @@ class Booking:
         self.status = status
         self.requested_at = datetime.utcnow()
         self.updated_at = datetime.utcnow()
+        self.paymentStatus = paymentStatus
 
     def save(self):
         booking_data = {
@@ -24,7 +25,8 @@ class Booking:
             "booking_date_range": self.booking_date_range,
             "status": self.status,
             "requested_at": self.requested_at,
-            "updated_at": self.updated_at
+            "updated_at": self.updated_at,
+            "paymentStatus": self.paymentStatus,
         }
         try:
             result = mongo.db['Bookings'].insert_one(booking_data)

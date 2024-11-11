@@ -300,6 +300,7 @@ def get_bookings_for_provider(entity_type):
                 "customer_id": str(booking["customer_id"]),
                 "booking_date_range": booking["booking_date_range"],
                 "status": booking["status"],
+                "paymentStatus": booking.get("paymentStatus"),
                 "requested_at": booking["requested_at"].isoformat(),
                 "updated_at": booking["updated_at"].isoformat(),
             }
@@ -411,6 +412,7 @@ def get_bookings_for_customer():
                 "_id": str(booking["_id"]),
                 "booking_date_range": booking["booking_date_range"],
                 "status": booking["status"],
+                "paymentStatus": booking.get("paymentStatus"),
                 "requested_at": booking["requested_at"].isoformat(),
                 "updated_at": booking["updated_at"].isoformat(),
                 "customer_details": {

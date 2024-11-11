@@ -226,26 +226,14 @@ def delete_venue_provider(venue_id):
 @jwt_required()
 def get_venues_grouped_by_user():
     try:
-        # Fetch all venues
-        venues = VenueProvider.find_all()
-        
-        # Group venues by 'created_by' field
-        grouped_venues = {}
-        for venue in venues:
-            created_by = venue.get('created_by')
-            if not created_by:
-                continue
-            
-            # Initialize a list for the user if not already present
-            if created_by not in grouped_venues:
-                grouped_venues[created_by] = []
-            
-            # Add the venue to the corresponding user's list
-            grouped_venues[created_by].append(venue)
+        current_user = get_jwt_identity()
+        user_id = get_user_id_by_email(current_user.get('email'))
 
+        venues = mongo.db['VenueProvider'].find({"created_by": user_id})
+        # Format the venues to include the _id as a string
+        venues = [{**venue, '_id': str(venue['_id'])} for venue in venues]
         # Return the grouped venues
-        return jsonify(grouped_venues), HttpCodes.HTTP_200_OK
+        return jsonify(venues), HttpCodes.HTTP_200_OK
 
     except Exception as e:
         return jsonify({"message": "Error in Fetching Venues", "error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
-
