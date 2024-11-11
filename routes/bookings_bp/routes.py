@@ -382,3 +382,88 @@ def get_all_bookings():
         return jsonify({"bookings": booking_list}), HttpCodes.HTTP_200_OK
     except Exception as e:
         return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
+
+@bookings_bp.route('/customer-bookings', methods=['GET'])
+@jwt_required()
+def get_bookings_for_customer():
+    """Retrieve all bookings made by the logged-in customer."""
+    try:
+        # Get the current logged-in user's information
+        current_user = get_jwt_identity()
+        
+        # Verify that the user type is "CUSTOMER"
+        if current_user.get('user_type') != 'CUSTOMER':
+            return jsonify({"message": "Permission denied"}), HttpCodes.HTTP_403_NOT_VERIFIED
+        
+        # Retrieve the customer's ID and email
+        customer_id = get_user_id_by_email(current_user.get('email'))
+        if not customer_id:
+            return jsonify({"message": "Customer not found"}), HttpCodes.HTTP_404_NOT_FOUND
+
+        # Find all bookings associated with this customer
+        bookings = mongo.db['Bookings'].find({"customer_id": ObjectId(customer_id)})
+
+        booking_list = []
+        
+        for booking in bookings:
+            # Base booking details
+            booking_details = {
+                "_id": str(booking["_id"]),
+                "booking_date_range": booking["booking_date_range"],
+                "status": booking["status"],
+                "requested_at": booking["requested_at"].isoformat(),
+                "updated_at": booking["updated_at"].isoformat(),
+                "customer_details": {
+                    "full_name": current_user.get('full_name'),
+                    "email": current_user.get('email'),
+                    "user_type": current_user.get('user_type')
+                },
+                "customer_id": str(booking["customer_id"]),
+            }
+            venue_id = booking.get("venue_id")
+            # Fetch venue details if the booking is for a venue
+            if venue_id:
+                venue_details = mongo.db['VenueProvider'].find_one({"_id": venue_id})
+                venue_provider_details = mongo.db['User'].find_one({"_id": venue_details["created_by"]})
+                
+                booking_details["venue_details"] = {
+                    "name": venue_details['name_of_venue'],
+                    "city": venue_details['city'],
+                    "address": venue_details['address'],
+                    "state": venue_details['state'],
+                    "capacity": venue_details['capacity'],
+                    "size": venue_details['size'],
+                    "description": venue_details['place_description']
+                } if venue_details else {}
+
+                booking_details["venue_provider_details"] = {
+                    "full_name": venue_provider_details['full_name'],
+                    "email": venue_provider_details['email']
+                } if venue_provider_details else {}
+
+            # Fetch vendor details if the booking is for a vendor
+            elif booking.get("vendor_id"):
+                vendor_details = mongo.db['Vendors'].find_one({"_id": booking["vendor_id"]})
+                vendor_provider_details = mongo.db['User'].find_one({"_id": vendor_details['created_by']})
+
+                booking_details["vendor_details"] = {
+                    "name": vendor_details['name'],
+                    "city": vendor_details['city'],
+                    "address": vendor_details['address'],
+                    "state": vendor_details['state'],
+                    "description": vendor_details['description'],
+                    "door_to_door_service": vendor_details['door_to_door_service']
+                } if vendor_details else {}
+
+                booking_details["vendor_provider_details"] = {
+                    "full_name": vendor_provider_details['full_name'],
+                    "email": vendor_provider_details['email']
+                } if vendor_provider_details else {}
+
+            booking_list.append(booking_details)
+
+        # Return the list of bookings with detailed information
+        return jsonify({"bookings": booking_list}), HttpCodes.HTTP_200_OK
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), HttpCodes.HTTP_500_INTERNAL_SERVER_ERROR
